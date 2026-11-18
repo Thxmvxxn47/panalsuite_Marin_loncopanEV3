@@ -2,6 +2,8 @@
 
 package com.panalbit.panalsuite.ui.home
 
+import androidx.compose.foundation.layout.padding
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
