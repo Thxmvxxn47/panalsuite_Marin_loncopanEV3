@@ -3,7 +3,7 @@
 PanalSuite centraliza las solicitudes de soporte de una organización con varias sucursales. Los solicitantes registran incidentes, los resolutores gestionan el trabajo y los supervisores pueden asignar responsables y hacer seguimiento. La app Android se conecta a dos microservicios Spring Boot y muestra indicadores económicos en una pestaña independiente.
 
 > **Integrantes:** _Thomas Marin, Darliette Loncopan_
-> **Asignatura:** Desarrollo de Aplicaciones Móviles — DuocUC · **Sección:** _(completar)_
+> **Asignatura:** Desarrollo de Aplicaciones Móviles — DuocUC · **Sección:** _(001D)_
 
 ## 1. Funcionalidades
 
