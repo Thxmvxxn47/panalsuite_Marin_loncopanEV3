@@ -2,7 +2,7 @@
 
 PanalSuite centraliza las solicitudes de soporte de una organización con varias sucursales. Los solicitantes registran incidentes, los resolutores gestionan el trabajo y los supervisores pueden asignar responsables y hacer seguimiento. La app Android se conecta a dos microservicios Spring Boot y muestra indicadores económicos en una pestaña independiente.
 
-> **Integrantes:** _(completar: nombre y rol de cada integrante)_
+> **Integrantes:** _Thomas Marin, Darliette Loncopan_
 > **Asignatura:** Desarrollo de Aplicaciones Móviles — DuocUC · **Sección:** _(completar)_
 
 ## 1. Funcionalidades
@@ -17,14 +17,14 @@ PanalSuite centraliza las solicitudes de soporte de una organización con varias
 
 ## 2. Estructura del repositorio
 
-```
+
 backend/auth-service      Microservicio de usuarios y login   (puerto 8081)
 backend/tickets-service   Microservicio de tickets            (puerto 8082)
 mobile/                   App Android (Compose, MVVM)
 mobile/keystore/          .jks ACADÉMICO para firmar el APK
 entrega/                  APK firmado, verificación y XML de cobertura
 docs/GIT_WORKFLOW.md      Guía de ramas y commits
-```
+
 
 ## 3. Cómo ejecutar los microservicios
 
