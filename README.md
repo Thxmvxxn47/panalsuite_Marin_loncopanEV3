@@ -1,6 +1,6 @@
 # PanalSuite — Gestión de tickets de soporte (Evaluación 3)
 
-App móvil Android (Kotlin + Jetpack Compose) conectada a **microservicios Spring Boot** propios y a una **API externa**, con almacenamiento local y recursos nativos.
+PanalSuite centraliza las solicitudes de soporte de una organización con varias sucursales. Los solicitantes registran incidentes, los resolutores gestionan el trabajo y los supervisores pueden asignar responsables y hacer seguimiento. La app Android se conecta a dos microservicios Spring Boot y muestra indicadores económicos en una pestaña independiente.
 
 > **Integrantes:** _(completar: nombre y rol de cada integrante)_
 > **Asignatura:** Desarrollo de Aplicaciones Móviles — DuocUC · **Sección:** _(completar)_
@@ -22,6 +22,7 @@ backend/auth-service      Microservicio de usuarios y login   (puerto 8081)
 backend/tickets-service   Microservicio de tickets            (puerto 8082)
 mobile/                   App Android (Compose, MVVM)
 mobile/keystore/          .jks ACADÉMICO para firmar el APK
+entrega/                  APK firmado, verificación y XML de cobertura
 docs/GIT_WORKFLOW.md      Guía de ramas y commits
 ```
 
@@ -29,12 +30,21 @@ docs/GIT_WORKFLOW.md      Guía de ramas y commits
 
 Requisitos: **JDK 17+** y **Maven 3.9+**. Cada servicio usa H2 en archivo (`./data/...`), por lo que no necesita instalar una base de datos.
 
-```bash
-cd backend/auth-service    && mvn spring-boot:run     # http://localhost:8081
-cd backend/tickets-service && mvn spring-boot:run     # http://localhost:8082
+Verifica `java -version` y `mvn -version` en PowerShell. Si presentas en Windows y `JAVA_HOME` apunta a una instalación anterior, puedes corregir la variable de la terminal con `$env:JAVA_HOME = Split-Path (Split-Path (Get-Command java).Source)`. Si PowerShell no reconoce `mvn`, agrega la carpeta `bin` de Maven al `PATH` o ejecuta `mvn.cmd` por su ruta completa.
+
+```powershell
+# Terminal 1, desde la raíz del proyecto
+cd backend/auth-service
+mvn spring-boot:run
 ```
 
-Los datos de ejemplo se cargan solos al primer arranque. Consola H2: `http://localhost:8081/h2-console` (JDBC `jdbc:h2:file:./data/authdb`, usuario `sa`, sin clave; en tickets-service usar el puerto 8082 y `./data/ticketsdb`).
+```powershell
+# Terminal 2, desde la raíz del proyecto
+cd backend/tickets-service
+mvn spring-boot:run
+```
+
+Mantén ambas terminales abiertas. El servicio de autenticación escucha en el puerto 8081 y el de tickets en el 8082. Los datos de ejemplo se cargan al primer arranque. Para inspeccionar H2, abre `/h2-console` en el puerto del servicio y usa `jdbc:h2:file:./data/authdb` o `jdbc:h2:file:./data/ticketsdb`, con usuario `sa` y contraseña vacía.
 
 Usuarios de prueba: `solicitante`, `resolutor`, `supervisor`, `gerencia` (clave `pass123`) y `admin` (clave `admin123`).
 
@@ -69,32 +79,38 @@ Usuarios de prueba: `solicitante`, `resolutor`, `supervisor`, `gerencia` (clave 
 
 ## 4. Cómo ejecutar la app
 
-1. Abrir la carpeta `mobile/` en **Android Studio** (Gradle JDK 17 o 21) y esperar la sincronización.
+1. Abrir la carpeta `mobile/` en **Android Studio**, configurar Gradle JDK 17 y confirmar que Android SDK Platform 34 está instalado. Esperar la sincronización.
 2. Levantar los dos microservicios (punto 3).
-3. Emulador: las URL por defecto (`http://10.0.2.2:8081/` y `:8082`) ya apuntan al PC. En un celular físico, cambiar `authBaseUrl` y `ticketsBaseUrl` en `mobile/gradle.properties` por la IP del PC (misma red Wi-Fi).
-4. Ejecutar el módulo `app`.
+3. Seleccionar un emulador Android. Las URL por defecto (`http://10.0.2.2:8081/` y `http://10.0.2.2:8082/`) apuntan al PC desde el emulador.
+4. Ejecutar el módulo `app` con el botón **Run**. Para instalar el APK de entrega con el emulador abierto, ejecutar `adb install -r entrega/PanalSuite-1.0.0.apk` desde la raíz.
+5. Si usas un celular físico, conecta el PC y el celular a la misma red Wi-Fi, reemplaza `authBaseUrl` y `ticketsBaseUrl` en `mobile/gradle.properties` por la IP del PC y vuelve a compilar.
+
+Para comprobar el CRUD en la interfaz, inicia sesión con `admin`, abre **Tickets**, crea uno, ábrelo desde el listado, edítalo y elimínalo desde el detalle. Prueba la cámara desde un ticket y abre **Indicadores** con conexión a internet.
 
 **Pruebas y cobertura:**
 
-```bash
+```powershell
 cd mobile
-./gradlew :app:testDebugUnitTest        # JUnit + MockK + coroutines-test
-./gradlew :app:jacocoLogicReport        # app/build/reports/jacoco/jacocoLogicReport/html/index.html
-cd ../backend/auth-service && mvn test
-cd ../tickets-service      && mvn test
+./gradlew.bat :app:jacocoLogicReport     # Ejecuta también las pruebas Android.
+cd ../backend/auth-service
+mvn test
+cd ../tickets-service
+mvn test
 ```
 
-La cobertura se mide sobre la lógica (repositorios, ViewModels, reglas, validadores, utilidades); la UI de Compose, el contenedor de dependencias y el código generado quedan fuera del reporte. _Revisar el porcentaje real en el reporte y adjuntar captura._
+JaCoCo mide la lógica de repositorios, ViewModels, reglas y validadores. El reporte excluye la interfaz Compose, la infraestructura de Android y el código generado. El reporte HTML se genera en `mobile/app/build/reports/jacoco/jacocoLogicReport/html/index.html`. La entrega incluye el [informe XML](entrega/evidencias/cobertura.xml).
+
+Pasaron **61 pruebas de Android**, **10 de autenticación** y **8 de tickets**. La cobertura de la lógica Android fue **97,38 % por líneas**, **88,63 % por instrucciones** y **81,07 % por ramas**.
 
 ## 5. APK firmado y .jks
 
 - Keystore académico: `mobile/keystore/panalsuite-academic.jks` (alias `panalsuite`; claves en `mobile/keystore.properties`).
-- Generar el APK: `cd mobile && ./gradlew :app:assembleRelease` → `mobile/app/build/outputs/apk/release/app-release.apk`.
-- Verificar la firma: `apksigner verify --print-certs app-release.apk`.
+- Generar el APK desde `mobile/` con `./gradlew.bat :app:assembleRelease` en Windows o `./gradlew :app:assembleRelease` en Linux/macOS. Gradle genera `app/build/outputs/apk/release/app-release.apk`.
+- El [APK de entrega](entrega/PanalSuite-1.0.0.apk) está firmado con esa llave. Para verificarlo, ejecutar `apksigner verify --verbose --print-certs entrega/PanalSuite-1.0.0.apk` desde la raíz. `apksigner` está en `build-tools/34.0.0` del SDK.
 
 > ⚠️ El `.jks` y sus contraseñas son **de uso exclusivamente académico**. No deben usarse para publicar aplicaciones reales.
 
-_(Pegar aquí captura del APK generado y de su verificación.)_
+![Evidencia del APK, el certificado de la llave académica y las pruebas](entrega/evidencias/verificacion.png)
 
 ## 6. Diagramas
 
@@ -136,6 +152,42 @@ flowchart LR
     AUTH --> H1[(H2 authdb)]
     TKT --> H2[(H2 ticketsdb)]
     UI -.-> CAM[Cámara del dispositivo]
+```
+
+### Guardado y lectura de un ticket
+
+```mermaid
+sequenceDiagram
+    actor Usuario
+    participant App as Android / Compose + ViewModel
+    participant Repo as Repositorio
+    participant Servicio as tickets-service
+    participant H2 as H2
+    participant Room as Room
+    Usuario->>App: Guarda el formulario
+    App->>App: Valida campos
+    App->>Repo: Envía solicitud
+    Repo->>Servicio: POST /api/tickets
+    Servicio->>H2: Valida y guarda
+    H2-->>Servicio: Ticket persistido
+    Servicio-->>Repo: JSON con el ticket
+    Repo->>Room: Actualiza la copia local
+    Repo-->>App: Devuelve el ticket guardado
+    App-->>Usuario: Confirma el resultado
+    Usuario->>App: Abre el listado
+    App->>Repo: Solicita tickets
+    alt Servicio disponible
+        Repo->>Servicio: GET /api/tickets
+        Servicio->>H2: Consulta registros
+        H2-->>Servicio: Tickets
+        Servicio-->>Repo: Lista actual
+        Repo->>Room: Refresca la copia local
+    else Servicio no disponible
+        Repo->>Room: Lee la copia local
+        Room-->>Repo: Tickets guardados
+    end
+    Repo-->>App: Lista y estado de conexión
+    App-->>Usuario: Muestra el listado
 ```
 
 ## 7. Tecnologías
