@@ -60,6 +60,27 @@ class TicketsViewModelTest {
         assertFalse(vm.state.value.isLoading)
     }
 
+    @Test fun keeps_last_sync_while_offline_and_updates_it_on_retry() {
+        var now = 1000L
+        val vm = TicketsViewModel(repo) { now }
+        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets))
+        vm.load(Samples.admin)
+        assertEquals(1000L, vm.state.value.lastSyncedAt)
+
+        now = 2000L
+        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets, offline = true))
+        vm.load(Samples.admin)
+        assertTrue(vm.state.value.offline)
+        assertEquals(tickets, vm.state.value.allTickets)
+        assertEquals(1000L, vm.state.value.lastSyncedAt)
+
+        now = 3000L
+        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets))
+        vm.load(Samples.admin)
+        assertFalse(vm.state.value.offline)
+        assertEquals(3000L, vm.state.value.lastSyncedAt)
+    }
+
     @Test fun dashboard_loads_stats_and_recent_limit() {
         val many = (1L..8L).map { Samples.ticket(it) }
         val stats = Stats(8, 3, 2, 1, 1, 1, 1, 2, 0)

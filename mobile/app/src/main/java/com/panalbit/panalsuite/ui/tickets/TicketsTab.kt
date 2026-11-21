@@ -20,7 +20,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -33,6 +35,8 @@ import com.panalbit.panalsuite.ui.components.ErrorMessage
 import com.panalbit.panalsuite.ui.components.OfflineBanner
 import com.panalbit.panalsuite.ui.components.TicketCard
 import com.panalbit.panalsuite.util.Labels
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> Unit) {
@@ -69,7 +73,35 @@ fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> 
         if (state.isLoading) LinearProgressIndicator(modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp))
-        if (state.offline) OfflineBanner(modifier = Modifier.padding(16.dp))
+        if (state.offline) OfflineBanner(modifier = Modifier.padding(horizontal = 16.dp))
+        val lastSyncedAt = state.lastSyncedAt
+        if (lastSyncedAt != null || state.offline) {
+            val label = lastSyncedAt?.let {
+                val time = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
+                "Última actualización: $time"
+            } ?: "Sin actualizaciones durante esta sesión"
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+        if (state.error != null && state.allTickets.isNotEmpty()) {
+            Text(
+                text = "No se pudo actualizar el listado",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+        if (state.offline || (state.error != null && state.allTickets.isNotEmpty())) {
+            TextButton(
+                onClick = { viewModel.load(user) },
+                enabled = !state.isLoading,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Text("Reintentar")
+            }
+        }
 
         val error = state.error
         when {

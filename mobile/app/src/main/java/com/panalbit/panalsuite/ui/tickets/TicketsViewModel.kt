@@ -19,6 +19,7 @@ data class TicketsUiState(
     val query: String = "",
     val statusFilter: String = ALL_STATUSES,
     val offline: Boolean = false,
+    val lastSyncedAt: Long? = null,
     val error: String? = null
 ) {
     /** Lista visible aplicando el texto de busqueda y el filtro de estado. */
@@ -33,17 +34,29 @@ data class TicketsUiState(
             }
 }
 
-class TicketsViewModel(private val ticketRepository: TicketRepository) : ViewModel() {
+class TicketsViewModel(
+    private val ticketRepository: TicketRepository,
+    private val currentTime: () -> Long = System::currentTimeMillis
+) : ViewModel() {
 
     private val _state = MutableStateFlow(TicketsUiState())
     val state: StateFlow<TicketsUiState> = _state.asStateFlow()
 
     fun load(user: User) {
+        if (_state.value.isLoading) return
+        _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
             ticketRepository.getTickets(user).fold(
                 onSuccess = { loaded ->
-                    _state.update { it.copy(isLoading = false, allTickets = loaded.data, offline = loaded.offline) }
+                    val syncedAt = if (loaded.offline) null else currentTime()
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            allTickets = loaded.data,
+                            offline = loaded.offline,
+                            lastSyncedAt = syncedAt ?: it.lastSyncedAt
+                        )
+                    }
                 },
                 onFailure = { e -> _state.update { it.copy(isLoading = false, error = e.message) } }
             )
