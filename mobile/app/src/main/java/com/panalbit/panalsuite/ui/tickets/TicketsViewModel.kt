@@ -12,20 +12,26 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 const val ALL_STATUSES = "TODOS"
+const val ALL_PRIORITIES = "TODAS"
 
 data class TicketsUiState(
     val isLoading: Boolean = false,
     val allTickets: List<Ticket> = emptyList(),
     val query: String = "",
     val statusFilter: String = ALL_STATUSES,
+    val priorityFilter: String = ALL_PRIORITIES,
     val offline: Boolean = false,
     val lastSyncedAt: Long? = null,
     val error: String? = null
 ) {
-    /** Lista visible aplicando el texto de busqueda y el filtro de estado. */
+    val hasFilters: Boolean
+        get() = query.isNotBlank() || statusFilter != ALL_STATUSES || priorityFilter != ALL_PRIORITIES
+
+    /** Aplica los mismos filtros a los tickets en línea y a la copia local. */
     val visibleTickets: List<Ticket>
         get() = allTickets
             .filter { statusFilter == ALL_STATUSES || it.status == statusFilter }
+            .filter { priorityFilter == ALL_PRIORITIES || it.priority == priorityFilter }
             .filter {
                 query.isBlank() ||
                     it.title.contains(query, ignoreCase = true) ||
@@ -69,5 +75,13 @@ class TicketsViewModel(
 
     fun onStatusFilter(value: String) {
         _state.update { it.copy(statusFilter = value) }
+    }
+
+    fun onPriorityFilter(value: String) {
+        _state.update { it.copy(priorityFilter = value) }
+    }
+
+    fun clearFilters() {
+        _state.update { it.copy(query = "", statusFilter = ALL_STATUSES, priorityFilter = ALL_PRIORITIES) }
     }
 }

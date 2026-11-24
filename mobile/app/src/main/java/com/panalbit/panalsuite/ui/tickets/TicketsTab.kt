@@ -28,8 +28,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.panalbit.panalsuite.domain.Priority
 import com.panalbit.panalsuite.domain.Status
 import com.panalbit.panalsuite.domain.User
+import com.panalbit.panalsuite.ui.components.DropdownField
 import com.panalbit.panalsuite.ui.components.EmptyState
 import com.panalbit.panalsuite.ui.components.ErrorMessage
 import com.panalbit.panalsuite.ui.components.OfflineBanner
@@ -70,6 +72,21 @@ fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> 
             }
         }
 
+        DropdownField(
+            label = "Prioridad",
+            options = listOf(ALL_PRIORITIES) + Priority.all,
+            selected = state.priorityFilter,
+            onSelected = viewModel::onPriorityFilter,
+            display = { if (it == ALL_PRIORITIES) "Todas" else Labels.priority(it) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
+        if (state.hasFilters) {
+            TextButton(onClick = viewModel::clearFilters, modifier = Modifier.padding(horizontal = 8.dp)) {
+                Text("Limpiar filtros")
+            }
+        }
+
         if (state.isLoading) LinearProgressIndicator(modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp))
@@ -106,7 +123,9 @@ fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> 
         val error = state.error
         when {
             error != null && state.allTickets.isEmpty() -> ErrorMessage(error, onRetry = { viewModel.load(user) })
-            visible.isEmpty() && !state.isLoading -> EmptyState("No hay tickets que coincidan con tu búsqueda")
+            visible.isEmpty() && !state.isLoading -> EmptyState(
+                if (state.hasFilters) "No hay tickets que coincidan con los filtros" else "No hay tickets"
+            )
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),

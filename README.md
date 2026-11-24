@@ -72,8 +72,12 @@ flowchart LR
 
 - Desde `mobile/`, ejecuta `./gradlew.bat :app:jacocoLogicReport` para correr las pruebas Android y generar el reporte de cobertura. Para probar cada servicio, ejecuta `mvn test` en su carpeta. Las pruebas usan JUnit y MockK en Android, y JUnit y MockMvc en el backend.
 - La versión empaquetada obtuvo **97,38 % de cobertura por líneas** y **81,07 % por ramas** en la lógica Android. [Informe de cobertura](entrega/evidencias/cobertura.xml).
-- Para generar un APK firmado desde `mobile/`, ejecuta `./gradlew.bat :app:assembleRelease`. La [llave académica](mobile/keystore/panalsuite-academic.jks) está configurada en `mobile/keystore.properties`.
+- Desde `mobile/`, ejecuta `./gradlew.bat :app:assembleDebug` para generar el APK de prueba. Para firmar una versión de entrega, configura una llave local y sus credenciales en `mobile/keystore.properties`.
 
-[APK firmado](entrega/PanalSuite-1.0.0.apk) · [Guía de trabajo en Git](docs/GIT_WORKFLOW.md)
+[Guía de trabajo en Git](docs/GIT_WORKFLOW.md)
 
-![Verificación del APK y de la llave académica](entrega/evidencias/verificacion.png)
+## Demostración del avance 3
+
+1. Inicia los dos servicios, abre la app e ingresa como supervisor.
+2. En **Tickets**, combina una búsqueda con el estado y la prioridad. Cambia la prioridad para ver cómo acotas la lista. **Limpiar filtros** vuelve a mostrar todos los tickets disponibles para tu rol.
+3. Con la lista cargada, detén el servicio de tickets y vuelve a actualizar. Repite la búsqueda y el filtro de prioridad sobre la copia local y comprueba que la app indique que está sin conexión.
