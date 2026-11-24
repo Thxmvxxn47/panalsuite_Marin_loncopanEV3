@@ -26,7 +26,9 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto register(@Valid @RequestBody UserRequest request) {
+    public UserDto register(@RequestHeader(value = "Authorization", required = false) String authorization,
+                            @Valid @RequestBody UserRequest request) {
+        service.requireAdministrator(authorization);
         return service.create(request);
     }
 

@@ -81,3 +81,11 @@ flowchart LR
 1. Inicia los dos servicios, abre la app e ingresa como supervisor.
 2. En **Tickets**, combina una búsqueda con el estado y la prioridad. Cambia la prioridad para ver cómo acotas la lista. **Limpiar filtros** vuelve a mostrar todos los tickets disponibles para tu rol.
 3. Con la lista cargada, detén el servicio de tickets y vuelve a actualizar. Repite la búsqueda y el filtro de prioridad sobre la copia local y comprueba que la app indique que está sin conexión.
+
+## Avance 3 – Gestión de usuarios desde Android
+
+Desde **Perfil → Gestionar usuarios**, un administrador puede buscar cuentas por nombre, usuario, correo o rol y crear una cuenta nueva. El servicio comprueba que el usuario sea único y guarda la contraseña con BCrypt.
+
+Para mostrar el flujo, inicia ambos servicios y entra como administrador. Crea una cuenta de solicitante, búscala en el directorio, cierra sesión y entra con la cuenta nueva para registrar un ticket. El directorio de administración aparece únicamente en el perfil de administrador y el servicio también verifica ese permiso antes de modificar cuentas.
+
+Las cuentas iniciales corresponden a un entorno académico local. Si necesitas conservar la validez de las sesiones al reiniciar el servicio de autenticación, define un valor privado para `PANALSUITE_TOKEN_SECRET` en tu entorno.

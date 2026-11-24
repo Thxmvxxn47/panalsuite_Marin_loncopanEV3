@@ -5,6 +5,7 @@ import com.panalbit.panalsuite.auth.dto.LoginResponse;
 import com.panalbit.panalsuite.auth.dto.UserDto;
 import com.panalbit.panalsuite.auth.dto.UserRequest;
 import com.panalbit.panalsuite.auth.exception.ApiException;
+import com.panalbit.panalsuite.auth.model.Role;
 import com.panalbit.panalsuite.auth.model.UserAccount;
 import com.panalbit.panalsuite.auth.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -38,7 +39,14 @@ public class UserService {
                 ? authorizationHeader.substring(7) : null;
         long userId = tokenService.validate(token)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado"));
-        return get(userId);
+        return repository.findById(userId).map(UserDto::from)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "La sesión ya no es válida"));
+    }
+
+    public void requireAdministrator(String authorizationHeader) {
+        if (currentUser(authorizationHeader).role() != Role.ADMINISTRADOR) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Solo un administrador puede gestionar usuarios");
+        }
     }
 
     public List<UserDto> list() {

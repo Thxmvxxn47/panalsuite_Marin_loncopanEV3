@@ -32,13 +32,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.panalbit.panalsuite.domain.Roles
 import com.panalbit.panalsuite.domain.User
 import com.panalbit.panalsuite.ui.components.ColorChip
 import com.panalbit.panalsuite.ui.components.LabeledValue
 import com.panalbit.panalsuite.util.Labels
 
 @Composable
-fun ProfileTab(user: User, onLogout: () -> Unit) {
+fun ProfileTab(user: User, onLogout: () -> Unit, onManageUsers: () -> Unit) {
     var confirmLogout by rememberSaveable { mutableStateOf(false) }
     val initials = user.name.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
 
@@ -82,6 +83,12 @@ fun ProfileTab(user: User, onLogout: () -> Unit) {
                 LabeledValue("Usuario", user.username)
                 LabeledValue("Correo", user.email)
                 LabeledValue("Versión de la app", "1.0.0 · Evaluación 3")
+            }
+        }
+
+        if (user.role == Roles.ADMIN) {
+            OutlinedButton(onClick = onManageUsers, modifier = Modifier.fillMaxWidth()) {
+                Text("Gestionar usuarios")
             }
         }
 

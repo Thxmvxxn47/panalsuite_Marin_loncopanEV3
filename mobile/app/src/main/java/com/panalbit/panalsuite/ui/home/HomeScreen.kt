@@ -69,6 +69,7 @@ fun HomeScreen(
     user: User,
     onOpenTicket: (Long) -> Unit,
     onCreateTicket: () -> Unit,
+    onManageUsers: () -> Unit,
     onLogout: () -> Unit
 ) {
     val dashboardVm = rememberViewModel(key = "dashboard-${user.id}") { DashboardViewModel(container.ticketRepository) }
@@ -169,7 +170,7 @@ fun HomeScreen(
                     onOpenTicket = onOpenTicket
                 )
                 HomeTab.INDICATORS -> IndicatorsTab(viewModel = indicatorsVm)
-                HomeTab.PROFILE -> ProfileTab(user = user, onLogout = onLogout)
+                HomeTab.PROFILE -> ProfileTab(user = user, onLogout = onLogout, onManageUsers = onManageUsers)
             }
         }
     }

@@ -22,12 +22,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.panalbit.panalsuite.di.AppContainer
+import com.panalbit.panalsuite.domain.Roles
 import com.panalbit.panalsuite.domain.User
 import com.panalbit.panalsuite.ui.AppViewModel
 import com.panalbit.panalsuite.ui.SessionState
 import com.panalbit.panalsuite.ui.home.HomeScreen
 import com.panalbit.panalsuite.ui.login.LoginScreen
 import com.panalbit.panalsuite.ui.login.LoginViewModel
+import com.panalbit.panalsuite.ui.profile.ManageUsersScreen
+import com.panalbit.panalsuite.ui.profile.ManageUsersViewModel
 import com.panalbit.panalsuite.ui.rememberViewModel
 import com.panalbit.panalsuite.ui.theme.PanalSuiteTheme
 import com.panalbit.panalsuite.ui.tickets.CreateEditTicketScreen
@@ -38,6 +41,7 @@ import com.panalbit.panalsuite.ui.tickets.TicketDetailViewModel
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
+    const val USERS = "users"
     const val DETAIL = "ticket/{ticketId}"
     const val FORM = "ticket_form?ticketId={ticketId}"
 
@@ -102,8 +106,16 @@ private fun AppNavHost(container: AppContainer, startLoggedIn: Boolean, user: Us
                     user = user,
                     onOpenTicket = { navController.navigate(Routes.detail(it)) },
                     onCreateTicket = { navController.navigate(Routes.form()) },
+                    onManageUsers = { navController.navigate(Routes.USERS) },
                     onLogout = onLogout
                 )
+            }
+        }
+
+        composable(Routes.USERS) {
+            if (user?.role == Roles.ADMIN) {
+                val viewModel = rememberViewModel { ManageUsersViewModel(container.authRepository) }
+                ManageUsersScreen(viewModel, onBack = { navController.popBackStack() })
             }
         }
 

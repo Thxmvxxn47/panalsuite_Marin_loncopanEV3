@@ -10,6 +10,14 @@ data class User(
     val role: String
 )
 
+data class CreateUserRequest(
+    val username: String,
+    val name: String,
+    val email: String,
+    val role: String,
+    val password: String
+)
+
 data class LoginRequest(val username: String, val password: String)
 
 data class LoginResponse(val token: String, val user: User)

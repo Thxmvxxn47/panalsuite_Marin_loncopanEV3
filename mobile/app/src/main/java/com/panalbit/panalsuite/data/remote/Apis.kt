@@ -7,6 +7,12 @@ import retrofit2.http.*
 interface AuthApi {
     @POST("api/auth/login") suspend fun login(@Body request: LoginRequest): LoginResponse
     @GET("api/users") suspend fun users(): List<User>
+
+    @POST("api/users")
+    suspend fun createUser(
+        @Header("Authorization") authorization: String,
+        @Body request: CreateUserRequest
+    ): User
 }
 
 interface TicketsApi {

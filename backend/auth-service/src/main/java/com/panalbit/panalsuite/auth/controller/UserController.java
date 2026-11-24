@@ -31,18 +31,25 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto create(@Valid @RequestBody UserRequest request) {
+    public UserDto create(@RequestHeader(value = "Authorization", required = false) String authorization,
+                          @Valid @RequestBody UserRequest request) {
+        service.requireAdministrator(authorization);
         return service.create(request);
     }
 
     @PutMapping("/{id}")
-    public UserDto update(@PathVariable Long id, @Valid @RequestBody UserRequest request) {
+    public UserDto update(@PathVariable Long id,
+                          @RequestHeader(value = "Authorization", required = false) String authorization,
+                          @Valid @RequestBody UserRequest request) {
+        service.requireAdministrator(authorization);
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id,
+                       @RequestHeader(value = "Authorization", required = false) String authorization) {
+        service.requireAdministrator(authorization);
         service.delete(id);
     }
 }
