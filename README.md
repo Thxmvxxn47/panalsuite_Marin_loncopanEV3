@@ -2,7 +2,7 @@
 
 App Android para registrar, asignar y resolver tickets de soporte por sucursal.
 
-**Integrantes:** Thomas Marin y Darliette Loncopan
+**Integrantes:** Thomas Marin y Darliette Loncopán
 
 **Asignatura:** Desarrollo de Aplicaciones Móviles · Duoc UC · Sección 001D
 
