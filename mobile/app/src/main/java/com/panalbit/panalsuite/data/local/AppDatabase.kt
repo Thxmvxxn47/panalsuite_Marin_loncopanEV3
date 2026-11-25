@@ -2,6 +2,8 @@ package com.panalbit.panalsuite.data.local
 
 import android.content.Context
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Entity(tableName = "cached_tickets")
 data class CachedTicket(@PrimaryKey val id: Long, val requesterId: Long, val json: String)
@@ -46,13 +48,37 @@ interface EvidenceDao {
     @Insert suspend fun add(evidence: EvidenceRow): Long
 }
 
-@Database(entities = [CachedTicket::class, EvidenceRow::class], version = 1, exportSchema = false)
+@Database(entities = [CachedTicket::class, EvidenceRow::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun ticketDao(): TicketDao
     abstract fun evidenceDao(): EvidenceDao
 
     companion object {
+        // Both released v1 layouts are supported without deleting local evidence.
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                fun exists(name: String): Boolean = db.query(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+                    arrayOf<Any?>(name)
+                ).use { it.moveToFirst() }
+
+                db.execSQL("CREATE TABLE IF NOT EXISTS `cached_tickets` (`id` INTEGER NOT NULL, `requesterId` INTEGER NOT NULL, `json` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `ticket_evidence` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ticketId` INTEGER NOT NULL, `filePath` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)")
+                if (exists("tickets")) {
+                    db.execSQL("INSERT OR IGNORE INTO `cached_tickets` (`id`, `requesterId`, `json`) SELECT `id`, `requesterId`, `json` FROM `tickets`")
+                    db.execSQL("DROP TABLE `tickets`")
+                }
+                if (exists("evidence")) {
+                    db.execSQL("INSERT INTO `ticket_evidence` (`ticketId`, `filePath`, `createdAt`) SELECT `ticketId`, `filePath`, `createdAt` FROM `evidence`")
+                    db.execSQL("DROP TABLE `evidence`")
+                }
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_ticket_evidence_ticketId` ON `ticket_evidence` (`ticketId`)")
+            }
+        }
+
         fun create(context: Context): AppDatabase =
-            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "panalsuite.db").build()
+            Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "panalsuite.db")
+                .addMigrations(MIGRATION_1_2)
+                .build()
     }
 }
