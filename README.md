@@ -71,7 +71,6 @@ flowchart LR
 ## Pruebas y APK
 
 - Desde `mobile/`, ejecuta `./gradlew.bat :app:jacocoLogicReport` para correr las pruebas Android y generar el reporte de cobertura. Para probar cada servicio, ejecuta `mvn test` en su carpeta. Las pruebas usan JUnit y MockK en Android, y JUnit y MockMvc en el backend.
-- La versión empaquetada obtuvo **97,38 % de cobertura por líneas** y **81,07 % por ramas** en la lógica Android. [Informe de cobertura](entrega/evidencias/cobertura.xml).
 - Desde `mobile/`, ejecuta `./gradlew.bat :app:assembleDebug` para generar el APK de prueba. Para firmar una versión de entrega, configura una llave local y sus credenciales en `mobile/keystore.properties`.
 
 [Guía de trabajo en Git](docs/GIT_WORKFLOW.md)
