@@ -117,7 +117,7 @@ fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: () -> Unit) {
                             OutlinedTextField(
                                 value = state.username,
                                 onValueChange = viewModel::onUsernameChange,
-                                label = { Text("Usuario") },
+                                label = { Text("Usuario o correo") },
                                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                                 singleLine = true,
                                 isError = state.usernameError != null,
@@ -179,7 +179,7 @@ fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: () -> Unit) {
                     }
 
                     Text(
-                        text = "Demo: solicitante / pass123 · resolutor / pass123 · supervisor / pass123 · admin / admin123",
+                        text = "Demo: thomas, jose, darliette, carlos o mizahel · clave inicial 1234",
                         modifier = Modifier.padding(top = 16.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,

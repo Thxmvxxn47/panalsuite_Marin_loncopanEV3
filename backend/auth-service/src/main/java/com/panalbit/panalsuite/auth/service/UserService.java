@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -28,10 +29,17 @@ public class UserService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        UserAccount user = repository.findByUsername(request.username().trim())
+        String identifier = request.username().trim();
+        UserAccount user = repository.findByUsername(identifier)
+                .or(() -> findUniqueEmail(identifier))
                 .filter(found -> passwordEncoder.matches(request.password(), found.getPasswordHash()))
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
         return new LoginResponse(tokenService.issue(user.getId()), UserDto.from(user));
+    }
+
+    private Optional<UserAccount> findUniqueEmail(String email) {
+        var matches = repository.findAllByEmailIgnoreCase(email);
+        return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
 
     public UserDto currentUser(String authorizationHeader) {

@@ -30,16 +30,17 @@ class AuthControllerTest {
     @Test
     void loginWithValidCredentialsReturnsTokenAndUser() throws Exception {
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("resolutor", "pass123")))
+                        .content(loginJson("CARLOS@panalsui.com", "1234")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.id").value(2))
                 .andExpect(jsonPath("$.user.role").value("RESOLUTOR"));
     }
 
     @Test
     void loginWithWrongPasswordReturns401() throws Exception {
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("resolutor", "mala")))
+                        .content(loginJson("carlos", "mala")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Usuario o contraseña incorrectos"));
     }
@@ -54,13 +55,13 @@ class AuthControllerTest {
     @Test
     void meReturnsCurrentUserForValidToken() throws Exception {
         String body = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("admin", "admin123")))
+                        .content(loginJson("thomas", "1234")))
                 .andReturn().getResponse().getContentAsString();
         JsonNode json = mapper.readTree(body);
 
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + json.get("token").asText()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("admin"));
+                .andExpect(jsonPath("$.username").value("thomas"));
         mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
     }
 
@@ -74,7 +75,7 @@ class AuthControllerTest {
 
     @Test
     void userMutationsRequireAnAdministrator() throws Exception {
-        String resolver = authorization("resolutor", "pass123");
+        String resolver = authorization("carlos", "1234");
         String body = """
                 {"username":"prueba","name":"Prueba","email":"prueba@example.org","role":"ADMINISTRADOR","password":"prueba123"}
                 """;
@@ -95,7 +96,7 @@ class AuthControllerTest {
 
     @Test
     void userCrudFlow() throws Exception {
-        String admin = authorization("admin", "admin123");
+        String admin = authorization("thomas", "1234");
         String createBody = "{\"username\":\"nuevo1\",\"name\":\"Usuario Nuevo\",\"email\":\"nuevo@empresa.cl\","
                 + "\"role\":\"SOLICITANTE\",\"password\":\"secreto1\"}";
         String created = mockMvc.perform(post("/api/users").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(createBody))
@@ -127,7 +128,7 @@ class AuthControllerTest {
 
     @Test
     void createUserWithShortPasswordReturns400() throws Exception {
-        String admin = authorization("admin", "admin123");
+        String admin = authorization("thomas", "1234");
         String body = "{\"username\":\"corto\",\"name\":\"Corto\",\"email\":\"c@empresa.cl\","
                 + "\"role\":\"SOLICITANTE\",\"password\":\"123\"}";
         mockMvc.perform(post("/api/users").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(body))

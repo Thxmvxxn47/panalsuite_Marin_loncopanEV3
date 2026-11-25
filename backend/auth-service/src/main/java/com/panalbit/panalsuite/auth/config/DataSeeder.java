@@ -6,8 +6,9 @@ import com.panalbit.panalsuite.auth.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-/** Carga los usuarios de demostracion la primera vez que arranca el servicio. */
+/** Crea las cuentas de demostración o actualiza las del Avance 3. */
 @Component
 public class DataSeeder implements CommandLineRunner {
 
@@ -20,18 +21,36 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
-        if (repository.count() > 0) {
-            return;
-        }
-        save("solicitante", "Ana García López", "ana.garcia@empresa.cl", Role.SOLICITANTE, "pass123");
-        save("resolutor", "Carlos Pérez Muñoz", "carlos.perez@empresa.cl", Role.RESOLUTOR, "pass123");
-        save("supervisor", "María Torres Silva", "maria.torres@empresa.cl", Role.SUPERVISOR, "pass123");
-        save("gerencia", "Roberto Vega Ramos", "roberto.vega@empresa.cl", Role.GERENCIA, "pass123");
-        save("admin", "Luis Morales Castro", "luis.morales@empresa.cl", Role.ADMINISTRADOR, "admin123");
+        boolean empty = repository.count() == 0;
+        updateDemo(empty, "solicitante", "ana.garcia", "mizahel", "Mizahel", Role.SOLICITANTE, "pass123");
+        updateDemo(empty, "resolutor", "carlos.perez", "carlos", "Carlos", Role.RESOLUTOR, "pass123");
+        updateDemo(empty, "supervisor", "maria.torres", "darliette", "Darliette", Role.SUPERVISOR, "pass123");
+        updateDemo(empty, "gerencia", "roberto.vega", "jose", "José", Role.GERENCIA, "pass123");
+        updateDemo(empty, "admin", "luis.morales", "thomas", "Thomas", Role.ADMINISTRADOR, "admin123");
     }
 
-    private void save(String username, String name, String email, Role role, String password) {
-        repository.save(new UserAccount(username, name, email, role, passwordEncoder.encode(password)));
+    private void updateDemo(boolean empty, String oldUsername, String oldEmail, String username,
+                            String name, Role role, String oldPassword) {
+        String email = username + "@panalsui.com";
+        if (empty) {
+            repository.save(new UserAccount(username, name, email, role, passwordEncoder.encode("1234")));
+            return;
+        }
+        var legacy = repository.findByUsername(oldUsername)
+                .filter(user -> user.getRole() == role && user.getEmail().equalsIgnoreCase(oldEmail + "@empresa.cl"));
+        if (legacy.isEmpty() || repository.existsByUsername(username)
+                || !repository.findAllByEmailIgnoreCase(email).isEmpty()) {
+            return;
+        }
+        UserAccount user = legacy.get();
+        user.setUsername(username);
+        user.setName(name);
+        user.setEmail(email);
+        if (passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            user.setPasswordHash(passwordEncoder.encode("1234"));
+        }
+        repository.save(user);
     }
 }

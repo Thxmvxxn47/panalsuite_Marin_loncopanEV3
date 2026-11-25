@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private static final long REQUESTER_ANA = 1L;
+    private static final long REQUESTER_MIZAHEL = 1L;
     private static final long RESOLVER_CARLOS = 2L;
 
     private final TicketRepository tickets;
@@ -35,11 +35,11 @@ public class DataSeeder implements CommandLineRunner {
         Ticket first = seed("Falla en sistema POS Tienda Alameda",
                 "El sistema POS presenta fallas intermitentes al procesar pagos con tarjeta débito. Unas 15 transacciones fallidas desde las 9:00 hrs.",
                 TicketType.INCIDENTE, TicketCategory.TI, TicketPriority.CRITICA, TicketStatus.EN_PROGRESO,
-                "Tienda Alameda", REQUESTER_ANA, "Ana García López", RESOLVER_CARLOS, 5);
+                "Tienda Alameda", REQUESTER_MIZAHEL, "Mizahel", RESOLVER_CARLOS, 5);
         seed("Solicitud acceso sistema de cobranzas",
                 "Se requiere acceso de lectura y reportes al módulo de cobranzas para el nuevo analista.",
                 TicketType.REQUERIMIENTO, TicketCategory.COBRANZA, TicketPriority.MEDIA, TicketStatus.NUEVO,
-                "Casa Matriz", REQUESTER_ANA, "Ana García López", null, 4);
+                "Casa Matriz", REQUESTER_MIZAHEL, "Mizahel", null, 4);
         seed("Error en impresión de boletas farmacia sur",
                 "La impresora de la caja 2 imprime caracteres ilegibles y a veces se atasca el papel.",
                 TicketType.INCIDENTE, TicketCategory.INFRAESTRUCTURA, TicketPriority.ALTA, TicketStatus.PENDIENTE,
@@ -65,8 +65,8 @@ public class DataSeeder implements CommandLineRunner {
                 TicketType.REQUERIMIENTO, TicketCategory.COBRANZA, TicketPriority.MEDIA, TicketStatus.CERRADO,
                 "Casa Matriz", 11L, "Carolina Muñoz", RESOLVER_CARLOS, 120);
 
-        comment(first, 3L, "María Torres Silva", "Se asigna al equipo de soporte nivel 2 para diagnóstico.", false);
-        comment(first, RESOLVER_CARLOS, "Carlos Pérez Muñoz", "Diagnóstico inicial listo, trabajando en la solución.", false);
+        comment(first, 3L, "Darliette", "Se asigna al equipo de soporte nivel 2 para diagnóstico.", false);
+        comment(first, RESOLVER_CARLOS, "Carlos", "Diagnóstico inicial listo, trabajando en la solución.", false);
 
         Notification notification = new Notification();
         notification.setRecipientId(RESOLVER_CARLOS);
@@ -94,7 +94,7 @@ public class DataSeeder implements CommandLineRunner {
         ticket.setRequesterId(requesterId);
         ticket.setRequesterName(requesterName);
         ticket.setAssignedToId(assignedToId);
-        ticket.setAssignedToName(assignedToId == null ? null : "Carlos Pérez Muñoz");
+        ticket.setAssignedToName(assignedToId == null ? null : "Carlos");
         ticket.setCreatedAt(created);
         ticket.setUpdatedAt(created.plusHours(Math.min(hoursAgo, 2)));
         Ticket saved = tickets.save(ticket);

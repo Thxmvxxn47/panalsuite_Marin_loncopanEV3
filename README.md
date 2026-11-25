@@ -32,7 +32,7 @@ mvn spring-boot:run
 
 En Android Studio, abre la carpeta `mobile/`, espera la sincronización y ejecuta `app` en un emulador. La app usa `10.0.2.2` para conectarse al PC. Si usas un celular en la misma red, cambia `authBaseUrl` y `ticketsBaseUrl` en `mobile/gradle.properties` por la IP del PC.
 
-**Cuentas de prueba:** `admin` con `admin123`, o `solicitante`, `resolutor`, `supervisor` y `gerencia` con `pass123`.
+**Cuentas de demostración:** `thomas@panalsui.com` (administrador), `jose@panalsui.com` (gerencia), `darliette@panalsui.com` (supervisora), `carlos@panalsui.com` (resolutor) y `mizahel@panalsui.com` (solicitante). La contraseña inicial de estas cuentas es `1234`.
 
 ## Servicios y API
 
