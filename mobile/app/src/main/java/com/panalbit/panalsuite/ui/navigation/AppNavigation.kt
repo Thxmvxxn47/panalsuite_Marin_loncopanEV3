@@ -46,7 +46,7 @@ object Routes {
     const val FORM = "ticket_form?ticketId={ticketId}"
 
     fun detail(id: Long) = "ticket/$id"
-    fun form(id: Long? = null) = if (id == null) "ticket_form" else "ticket_form?ticketId=$id"
+    fun form(id: Long? = null) = "ticket_form?ticketId=${id ?: -1L}"
 }
 
 /** Raiz de la app: decide entre login y pantalla principal segun la sesion guardada en DataStore. */
@@ -105,7 +105,9 @@ private fun AppNavHost(container: AppContainer, startLoggedIn: Boolean, user: Us
                     container = container,
                     user = user,
                     onOpenTicket = { navController.navigate(Routes.detail(it)) },
-                    onCreateTicket = { navController.navigate(Routes.form()) },
+                    onCreateTicket = {
+                        navController.navigate(Routes.form()) { launchSingleTop = true }
+                    },
                     onManageUsers = { navController.navigate(Routes.USERS) },
                     onLogout = onLogout
                 )

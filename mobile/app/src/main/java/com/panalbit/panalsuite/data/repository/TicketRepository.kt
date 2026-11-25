@@ -77,7 +77,17 @@ class TicketRepository(
     }
 
     private suspend fun updateCache(request: suspend () -> Ticket) = apiResult {
-        cacheLock.withLock { request().also { tickets.save(encode(it)) } }
+        cacheLock.withLock {
+            val ticket = request()
+            try {
+                tickets.save(encode(ticket))
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The server already saved the ticket. The next refresh can rebuild the cache.
+            }
+            ticket
+        }
     }
 
     private suspend fun <T> load(remote: suspend () -> T, cached: suspend () -> T?): Loaded<T> =
