@@ -13,6 +13,7 @@ import com.panalbit.panalsuite.domain.TicketRules
 import com.panalbit.panalsuite.domain.Roles
 import com.panalbit.panalsuite.domain.User
 import com.panalbit.panalsuite.util.Validators
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,9 +74,17 @@ class TicketDetailViewModel(
         }
     }
 
-    private suspend fun loadEvidence() {
-        val items = ticketRepository.getEvidence(ticketId)
-        _state.update { it.copy(evidence = items) }
+    private suspend fun loadEvidence(): Boolean {
+        return try {
+            val items = ticketRepository.getEvidence(ticketId)
+            _state.update { it.copy(evidence = items) }
+            true
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            _state.update { it.copy(message = "No se pudo cargar la evidencia local") }
+            false
+        }
     }
 
     fun loadResolvers() {
@@ -153,10 +162,24 @@ class TicketDetailViewModel(
     }
 
     fun addEvidence(filePath: String) {
+        if (filePath.isBlank()) {
+            _state.update { it.copy(message = "Selecciona una foto para adjuntar") }
+            return
+        }
         viewModelScope.launch {
-            ticketRepository.addEvidence(ticketId, filePath)
-            loadEvidence()
-            _state.update { it.copy(message = "Evidencia guardada en el dispositivo") }
+            try {
+                ticketRepository.addEvidence(ticketId, filePath)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                _state.update { it.copy(message = "No se pudo guardar la evidencia") }
+                return@launch
+            }
+            if (loadEvidence()) {
+                _state.update { it.copy(message = "Evidencia guardada en el dispositivo") }
+            } else {
+                _state.update { it.copy(message = "La evidencia se guardó, pero no se pudo actualizar la lista") }
+            }
         }
     }
 
