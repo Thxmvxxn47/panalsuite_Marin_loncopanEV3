@@ -18,8 +18,8 @@ public record TicketDto(
         String requesterName,
         Long assignedToId,
         String assignedToName,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt) {
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDateTime createdAt,
+        @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDateTime updatedAt) {
 
     public static TicketDto from(Ticket t) {
         return new TicketDto(t.getId(), t.getTicketNumber(), t.getTitle(), t.getDescription(), t.getType(),
