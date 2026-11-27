@@ -1,8 +1,4 @@
 .DS_Store
 
-*.apk
-*.aab
-*.jks
-*.keystore
 /mobile/keystore.properties
-/mobile/.kotlin/
+/mobile/keystore/*.jks
