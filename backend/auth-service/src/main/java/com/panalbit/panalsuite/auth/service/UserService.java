@@ -5,7 +5,6 @@ import com.panalbit.panalsuite.auth.dto.LoginResponse;
 import com.panalbit.panalsuite.auth.dto.UserDto;
 import com.panalbit.panalsuite.auth.dto.UserRequest;
 import com.panalbit.panalsuite.auth.exception.ApiException;
-import com.panalbit.panalsuite.auth.model.Role;
 import com.panalbit.panalsuite.auth.model.UserAccount;
 import com.panalbit.panalsuite.auth.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -29,17 +27,12 @@ public class UserService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        String identifier = request.username().trim();
-        UserAccount user = repository.findByUsername(identifier)
-                .or(() -> findUniqueEmail(identifier))
+        UserAccount user = repository.findByUsernameIgnoreCase(request.username().trim())
+                .or(() -> { var matches = repository.findAllByEmailIgnoreCase(request.username().trim());
+                    return matches.size() == 1 ? java.util.Optional.of(matches.get(0)) : java.util.Optional.empty(); })
                 .filter(found -> passwordEncoder.matches(request.password(), found.getPasswordHash()))
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
         return new LoginResponse(tokenService.issue(user.getId()), UserDto.from(user));
-    }
-
-    private Optional<UserAccount> findUniqueEmail(String email) {
-        var matches = repository.findAllByEmailIgnoreCase(email);
-        return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
 
     public UserDto currentUser(String authorizationHeader) {
@@ -47,14 +40,7 @@ public class UserService {
                 ? authorizationHeader.substring(7) : null;
         long userId = tokenService.validate(token)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado"));
-        return repository.findById(userId).map(UserDto::from)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "La sesión ya no es válida"));
-    }
-
-    public void requireAdministrator(String authorizationHeader) {
-        if (currentUser(authorizationHeader).role() != Role.ADMINISTRADOR) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Solo un administrador puede gestionar usuarios");
-        }
+        return get(userId);
     }
 
     public List<UserDto> list() {
@@ -69,7 +55,7 @@ public class UserService {
         if (request.password() == null || request.password().length() < 6) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La contraseña debe tener al menos 6 caracteres");
         }
-        if (repository.existsByUsername(request.username().trim())) {
+        if (repository.findByUsernameIgnoreCase(request.username().trim()).isPresent() || !repository.findAllByEmailIgnoreCase(request.email().trim()).isEmpty()) {
             throw new ApiException(HttpStatus.CONFLICT, "El usuario ya existe");
         }
         UserAccount user = new UserAccount(request.username().trim(), request.name().trim(),
@@ -79,11 +65,14 @@ public class UserService {
 
     public UserDto update(Long id, UserRequest request) {
         UserAccount user = find(id);
-        repository.findByUsername(request.username().trim())
+        repository.findByUsernameIgnoreCase(request.username().trim())
                 .filter(other -> !other.getId().equals(id))
                 .ifPresent(other -> {
                     throw new ApiException(HttpStatus.CONFLICT, "El usuario ya existe");
                 });
+        if (repository.findAllByEmailIgnoreCase(request.email().trim()).stream().anyMatch(other -> !other.getId().equals(id))) {
+            throw new ApiException(HttpStatus.CONFLICT, "El correo ya existe");
+        }
         user.setUsername(request.username().trim());
         user.setName(request.name().trim());
         user.setEmail(request.email().trim());

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
@@ -22,15 +23,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.panalbit.panalsuite.di.AppContainer
-import com.panalbit.panalsuite.domain.Roles
 import com.panalbit.panalsuite.domain.User
 import com.panalbit.panalsuite.ui.AppViewModel
 import com.panalbit.panalsuite.ui.SessionState
 import com.panalbit.panalsuite.ui.home.HomeScreen
 import com.panalbit.panalsuite.ui.login.LoginScreen
 import com.panalbit.panalsuite.ui.login.LoginViewModel
-import com.panalbit.panalsuite.ui.profile.ManageUsersScreen
-import com.panalbit.panalsuite.ui.profile.ManageUsersViewModel
 import com.panalbit.panalsuite.ui.rememberViewModel
 import com.panalbit.panalsuite.ui.theme.PanalSuiteTheme
 import com.panalbit.panalsuite.ui.tickets.CreateEditTicketScreen
@@ -41,12 +39,11 @@ import com.panalbit.panalsuite.ui.tickets.TicketDetailViewModel
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
-    const val USERS = "users"
     const val DETAIL = "ticket/{ticketId}"
     const val FORM = "ticket_form?ticketId={ticketId}"
 
     fun detail(id: Long) = "ticket/$id"
-    fun form(id: Long? = null) = "ticket_form?ticketId=${id ?: -1L}"
+    fun form(id: Long? = null) = if (id == null) "ticket_form" else "ticket_form?ticketId=$id"
 }
 
 /** Raiz de la app: decide entre login y pantalla principal segun la sesion guardada en DataStore. */
@@ -60,12 +57,12 @@ fun PanalSuiteRoot(container: AppContainer) {
             SessionState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            else -> AppNavHost(
+            else -> key((session as? SessionState.LoggedIn)?.user?.id) { AppNavHost(
                 container = container,
                 startLoggedIn = session is SessionState.LoggedIn,
                 user = (session as? SessionState.LoggedIn)?.user,
                 onLogout = appViewModel::logout
-            )
+            ) }
         }
     }
 }
@@ -93,9 +90,7 @@ private fun AppNavHost(container: AppContainer, startLoggedIn: Boolean, user: Us
             val viewModel = rememberViewModel { LoginViewModel(container.authRepository) }
             LoginScreen(
                 viewModel = viewModel,
-                onLoggedIn = {
-                    navController.navigate(Routes.HOME) { popUpTo(Routes.LOGIN) { inclusive = true } }
-                }
+                onLoggedIn = { /* SessionState changes the navigation root. */ }
             )
         }
 
@@ -105,19 +100,9 @@ private fun AppNavHost(container: AppContainer, startLoggedIn: Boolean, user: Us
                     container = container,
                     user = user,
                     onOpenTicket = { navController.navigate(Routes.detail(it)) },
-                    onCreateTicket = {
-                        navController.navigate(Routes.form()) { launchSingleTop = true }
-                    },
-                    onManageUsers = { navController.navigate(Routes.USERS) },
+                    onCreateTicket = { navController.navigate(Routes.form()) },
                     onLogout = onLogout
                 )
-            }
-        }
-
-        composable(Routes.USERS) {
-            if (user?.role == Roles.ADMIN) {
-                val viewModel = rememberViewModel { ManageUsersViewModel(container.authRepository) }
-                ManageUsersScreen(viewModel, onBack = { navController.popBackStack() })
             }
         }
 

@@ -69,7 +69,6 @@ fun HomeScreen(
     user: User,
     onOpenTicket: (Long) -> Unit,
     onCreateTicket: () -> Unit,
-    onManageUsers: () -> Unit,
     onLogout: () -> Unit
 ) {
     val dashboardVm = rememberViewModel(key = "dashboard-${user.id}") { DashboardViewModel(container.ticketRepository) }
@@ -79,13 +78,17 @@ fun HomeScreen(
 
     val notifications by notificationsVm.state.collectAsStateWithLifecycle()
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-    val tab = HomeTab.entries[selectedIndex]
+    val tab = HomeTab.entries.getOrElse(selectedIndex) { HomeTab.DASHBOARD }
 
     // Al abrir y al volver de otra pantalla se refrescan los datos desde los microservicios
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         dashboardVm.load(user)
         ticketsVm.load(user)
         notificationsVm.load(user.id)
+    }
+
+    androidx.compose.runtime.LaunchedEffect(tab, user.id) {
+        if (tab == HomeTab.TICKETS) ticketsVm.load(user)
     }
 
     fun refresh() {
@@ -170,7 +173,7 @@ fun HomeScreen(
                     onOpenTicket = onOpenTicket
                 )
                 HomeTab.INDICATORS -> IndicatorsTab(viewModel = indicatorsVm)
-                HomeTab.PROFILE -> ProfileTab(user = user, onLogout = onLogout, onManageUsers = onManageUsers)
+                HomeTab.PROFILE -> ProfileTab(user = user, onLogout = onLogout)
             }
         }
     }

@@ -6,9 +6,8 @@ import com.panalbit.panalsuite.auth.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-/** Crea las cuentas de demostración o actualiza las del Avance 3. */
+/** Carga los usuarios de demostracion la primera vez que arranca el servicio. */
 @Component
 public class DataSeeder implements CommandLineRunner {
 
@@ -21,34 +20,35 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     @Override
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) {
-        boolean empty = repository.count() == 0;
-        updateDemo(empty, "solicitante", "ana.garcia", "mizahel", "Mizahel", Role.SOLICITANTE, "pass123");
-        updateDemo(empty, "resolutor", "carlos.perez", "carlos", "Carlos", Role.RESOLUTOR, "pass123");
-        updateDemo(empty, "supervisor", "maria.torres", "darliette", "Darliette", Role.SUPERVISOR, "pass123");
-        updateDemo(empty, "gerencia", "roberto.vega", "jose", "José", Role.GERENCIA, "pass123");
-        updateDemo(empty, "admin", "luis.morales", "thomas", "Thomas", Role.ADMINISTRADOR, "admin123");
+        migrate("solicitante", "mizahel", "Mizahel", Role.SOLICITANTE);
+        migrate("resolutor", "carlos", "Carlos", Role.RESOLUTOR);
+        migrate("supervisor", "darliette", "Darliette", Role.SUPERVISOR);
+        migrate("gerencia", "jose", "José", Role.GERENCIA);
+        migrate("admin", "thomas", "Thomas", Role.ADMINISTRADOR);
     }
 
-    private void updateDemo(boolean empty, String oldUsername, String oldEmail, String username,
-                            String name, Role role, String oldPassword) {
+    private void migrate(String legacy, String username, String name, Role role) {
         String email = username + "@panalsui.com";
-        if (empty) {
-            repository.save(new UserAccount(username, name, email, role, passwordEncoder.encode("1234")));
-            return;
+        var old = repository.findByUsernameIgnoreCase(legacy).filter(u -> u.getRole() == role);
+        var current = repository.findByUsernameIgnoreCase(username);
+        // Never merge or delete accounts: IDs are referenced by the tickets service.
+        if (old.isPresent() && current.isPresent() && !old.get().getId().equals(current.get().getId())) {
+            throw new IllegalStateException("Conflicto de cuentas de demostración: " + legacy + " / " + username);
         }
-        var legacy = repository.findByUsername(oldUsername)
-                .filter(user -> user.getRole() == role && user.getEmail().equalsIgnoreCase(oldEmail + "@empresa.cl"));
-        if (legacy.isEmpty() || repository.existsByUsername(username)
-                || !repository.findAllByEmailIgnoreCase(email).isEmpty()) {
-            return;
+        UserAccount user = old.or(() -> current).orElseGet(UserAccount::new);
+        if (user.getId() != null && user.getRole() != role) {
+            throw new IllegalStateException("Rol incompatible para cuenta de demostración: " + username);
         }
-        UserAccount user = legacy.get();
+        if (repository.findAllByEmailIgnoreCase(email).stream().anyMatch(u -> !u.getId().equals(user.getId()))) {
+            throw new IllegalStateException("Correo de demostración duplicado: " + email);
+        }
         user.setUsername(username);
         user.setName(name);
         user.setEmail(email);
-        if (passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+        user.setRole(role);
+        if (user.getPasswordHash() == null || !passwordEncoder.matches("1234", user.getPasswordHash())) {
             user.setPasswordHash(passwordEncoder.encode("1234"));
         }
         repository.save(user);

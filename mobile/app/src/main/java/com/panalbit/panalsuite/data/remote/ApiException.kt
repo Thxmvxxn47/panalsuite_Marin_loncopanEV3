@@ -22,5 +22,6 @@ internal suspend fun <T> apiResult(block: suspend () -> T): Result<T> = try {
 } catch (error: IOException) {
     Result.failure(ApiException("No se pudo conectar con el servicio"))
 } catch (error: Exception) {
-    Result.failure(ApiException("No se pudieron procesar los datos"))
+    android.util.Log.e("PanalSuiteApi", "Error procesando respuesta", error)
+    Result.failure(ApiException("No se pudieron procesar los datos (${error.javaClass.simpleName})"))
 }
