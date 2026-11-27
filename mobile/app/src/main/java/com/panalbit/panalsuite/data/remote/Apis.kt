@@ -5,14 +5,10 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.http.*
 
 interface AuthApi {
+    @GET("api/auth/me") suspend fun me(@Header("Authorization") authorization: String): User
+    @POST("api/auth/register") suspend fun register(@Body request: RegisterRequest): User
     @POST("api/auth/login") suspend fun login(@Body request: LoginRequest): LoginResponse
     @GET("api/users") suspend fun users(): List<User>
-
-    @POST("api/users")
-    suspend fun createUser(
-        @Header("Authorization") authorization: String,
-        @Body request: CreateUserRequest
-    ): User
 }
 
 interface TicketsApi {

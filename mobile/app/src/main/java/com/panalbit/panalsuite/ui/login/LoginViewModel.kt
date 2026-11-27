@@ -33,6 +33,8 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
         _state.update { it.copy(password = value, passwordError = null, error = null) }
     }
 
+    suspend fun register(request: com.panalbit.panalsuite.domain.RegisterRequest) = authRepository.register(request)
+
     fun submit() {
         val current = _state.value
         if (current.isLoading) return

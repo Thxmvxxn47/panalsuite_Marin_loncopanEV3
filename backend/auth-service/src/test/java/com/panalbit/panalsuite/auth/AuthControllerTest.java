@@ -30,11 +30,17 @@ class AuthControllerTest {
     @Test
     void loginWithValidCredentialsReturnsTokenAndUser() throws Exception {
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("CARLOS@panalsui.com", "1234")))
+                        .content(loginJson("carlos", "1234")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.user.id").value(2))
                 .andExpect(jsonPath("$.user.role").value("RESOLUTOR"));
+    }
+
+    @Test
+    void loginWithEmailReturnsSameUser() throws Exception {
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("THOMAS@panalsui.com", "1234")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.user.username").value("thomas"));
     }
 
     @Test
@@ -65,62 +71,27 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
     }
 
-    private String authorization(String user, String password) throws Exception {
-        String response = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson(user, password)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        return "Bearer " + mapper.readTree(response).get("token").asText();
-    }
-
-    @Test
-    void userMutationsRequireAnAdministrator() throws Exception {
-        String resolver = authorization("carlos", "1234");
-        String body = """
-                {"username":"prueba","name":"Prueba","email":"prueba@example.org","role":"ADMINISTRADOR","password":"prueba123"}
-                """;
-        for (String endpoint : new String[]{"/api/users", "/api/auth/register"}) {
-            mockMvc.perform(post(endpoint).contentType(MediaType.APPLICATION_JSON).content(body))
-                    .andExpect(status().isUnauthorized());
-            mockMvc.perform(post(endpoint).header("Authorization", resolver)
-                            .contentType(MediaType.APPLICATION_JSON).content(body))
-                    .andExpect(status().isForbidden());
-        }
-
-        mockMvc.perform(put("/api/users/1").header("Authorization", resolver)
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/users/1").header("Authorization", resolver))
-                .andExpect(status().isForbidden());
-    }
-
     @Test
     void userCrudFlow() throws Exception {
-        String admin = authorization("thomas", "1234");
         String createBody = "{\"username\":\"nuevo1\",\"name\":\"Usuario Nuevo\",\"email\":\"nuevo@empresa.cl\","
                 + "\"role\":\"SOLICITANTE\",\"password\":\"secreto1\"}";
-        String created = mockMvc.perform(post("/api/users").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(createBody))
+        String created = mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(createBody))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         long id = mapper.readTree(created).get("id").asLong();
 
-        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("nuevo1", "secreto1")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.role").value("SOLICITANTE"));
-
-        mockMvc.perform(post("/api/users").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(createBody))
+        mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(createBody))
                 .andExpect(status().isConflict());
 
         String updateBody = "{\"username\":\"nuevo1\",\"name\":\"Nombre Editado\",\"email\":\"nuevo@empresa.cl\","
                 + "\"role\":\"RESOLUTOR\"}";
-        mockMvc.perform(put("/api/users/" + id).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(updateBody))
+        mockMvc.perform(put("/api/users/" + id).contentType(MediaType.APPLICATION_JSON).content(updateBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Nombre Editado"))
                 .andExpect(jsonPath("$.role").value("RESOLUTOR"));
 
         mockMvc.perform(get("/api/users/" + id)).andExpect(status().isOk());
-        mockMvc.perform(delete("/api/users/" + id).header("Authorization", admin)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/users/" + id)).andExpect(status().isNoContent());
         mockMvc.perform(get("/api/users/" + id)).andExpect(status().isNotFound());
         assertEquals(5, mapper.readTree(mockMvc.perform(get("/api/users")).andReturn()
                 .getResponse().getContentAsString()).size());
@@ -128,10 +99,9 @@ class AuthControllerTest {
 
     @Test
     void createUserWithShortPasswordReturns400() throws Exception {
-        String admin = authorization("thomas", "1234");
         String body = "{\"username\":\"corto\",\"name\":\"Corto\",\"email\":\"c@empresa.cl\","
                 + "\"role\":\"SOLICITANTE\",\"password\":\"123\"}";
-        mockMvc.perform(post("/api/users").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
     }
 }

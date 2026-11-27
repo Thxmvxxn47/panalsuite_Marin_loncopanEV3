@@ -6,7 +6,7 @@ import com.panalbit.panalsuite.tickets.model.TicketNotificationType;
 import java.time.LocalDateTime;
 
 public record NotificationDto(Long id, Long recipientId, String title, String message, TicketNotificationType type,
-                              Long ticketId, String ticketNumber, boolean read, LocalDateTime createdAt) {
+                              Long ticketId, String ticketNumber, boolean read, @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDateTime createdAt) {
 
     public static NotificationDto from(Notification n) {
         return new NotificationDto(n.getId(), n.getRecipientId(), n.getTitle(), n.getMessage(), n.getType(),

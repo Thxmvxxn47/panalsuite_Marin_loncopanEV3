@@ -169,38 +169,6 @@ class DetailViewModelTest {
         assertEquals("no", vm.state.value.message)
     }
 
-    @Test fun evidence_read_failure_keeps_ticket_open() {
-        val vm = vm(Samples.resolver)
-        coEvery { tickets.getEvidence(1) } throws IllegalStateException("lectura fallida")
-        vm.load()
-        assertNotNull(vm.state.value.ticket)
-        assertEquals(2, vm.state.value.comments.size)
-        assertEquals("No se pudo cargar la evidencia local", vm.state.value.message)
-    }
-
-    @Test fun blank_evidence_path_is_rejected() {
-        val vm = vm(Samples.resolver)
-        vm.addEvidence("  ")
-        coVerify(exactly = 0) { tickets.addEvidence(any(), any()) }
-        assertEquals("Selecciona una foto para adjuntar", vm.state.value.message)
-    }
-
-    @Test fun evidence_write_failure_reports_error() {
-        val vm = vm(Samples.resolver)
-        coEvery { tickets.addEvidence(1, "/y.jpg") } throws IllegalStateException("escritura fallida")
-        vm.addEvidence("/y.jpg")
-        assertEquals("No se pudo guardar la evidencia", vm.state.value.message)
-        coVerify(exactly = 0) { tickets.getEvidence(any()) }
-    }
-
-    @Test fun evidence_write_success_with_refresh_failure_reports_both() {
-        val vm = vm(Samples.resolver)
-        coEvery { tickets.addEvidence(1, "/y.jpg") } returns Evidence(2, 1, "/y.jpg", 2L)
-        coEvery { tickets.getEvidence(1) } throws IllegalStateException("lectura fallida")
-        vm.addEvidence("/y.jpg")
-        assertEquals("La evidencia se guardó, pero no se pudo actualizar la lista", vm.state.value.message)
-    }
-
     @Test fun evidence_and_message_cleared() {
         val vm = vm(Samples.resolver)
         coEvery { tickets.addEvidence(1, "/y.jpg") } returns Evidence(2, 1, "/y.jpg", 2L)

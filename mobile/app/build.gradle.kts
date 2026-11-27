@@ -115,7 +115,6 @@ dependencies {
 // ---------------------------------------------------------------------------------------------
 // Cobertura (JaCoCo) solo de la logica: repositorios, ViewModels, reglas, validadores y utilidades.
 // Se excluye la UI de Compose, el contenedor de dependencias y las clases generadas.
-// Uso:  ./gradlew :app:jacocoLogicReport   ->  app/build/reports/jacoco/jacocoLogicReport/html/index.html
 // ---------------------------------------------------------------------------------------------
 tasks.withType<Test>().configureEach {
     configure<JacocoTaskExtension> {

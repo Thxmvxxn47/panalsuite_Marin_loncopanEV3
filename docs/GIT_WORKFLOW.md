@@ -31,4 +31,4 @@ Abrir un Pull Request hacia `develop`, pedir revisión a otro integrante y hacer
 
 - Commits pequeños y con mensaje claro; cada integrante hace commits con **su propio usuario** de Git.
 - No subir `build/`, `.gradle/`, `local.properties` ni datos locales (`data/`, ya en `.gitignore`).
-- Antes de integrar: `mvn test` en los servicios y `./gradlew :app:testDebugUnitTest` en la app.
+- Antes de integrar, valida los servicios y la app con sus pruebas automatizadas.

@@ -5,7 +5,7 @@ import com.panalbit.panalsuite.tickets.model.TicketComment;
 import java.time.LocalDateTime;
 
 public record CommentDto(Long id, Long ticketId, Long authorId, String authorName, String text,
-                         boolean internal, LocalDateTime createdAt) {
+                         boolean internal, @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDateTime createdAt) {
 
     public static CommentDto from(TicketComment c) {
         return new CommentDto(c.getId(), c.getTicketId(), c.getAuthorId(), c.getAuthorName(), c.getText(),

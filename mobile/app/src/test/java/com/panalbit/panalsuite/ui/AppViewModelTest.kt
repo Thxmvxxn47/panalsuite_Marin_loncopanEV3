@@ -7,6 +7,7 @@ import com.panalbit.panalsuite.testutil.FakeSessionStorage
 import com.panalbit.panalsuite.testutil.MainDispatcherRule
 import com.panalbit.panalsuite.testutil.Samples
 import io.mockk.mockk
+import io.mockk.coEvery
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -22,7 +23,9 @@ class AppViewModelTest {
 
     @Test fun logged_in_and_logout_clears() {
         val storage = FakeSessionStorage(Session("tok", Samples.admin))
-        val vm = AppViewModel(AuthRepository(mockk<AuthApi>(), storage))
+        val api = mockk<AuthApi>()
+        coEvery { api.me("Bearer tok") } returns Samples.admin
+        val vm = AppViewModel(AuthRepository(api, storage))
         assertTrue(vm.sessionState.value is SessionState.LoggedIn)
         vm.logout()
         assertEquals(SessionState.LoggedOut, vm.sessionState.value)

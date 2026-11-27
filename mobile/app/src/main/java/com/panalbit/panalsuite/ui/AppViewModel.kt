@@ -6,7 +6,9 @@ import com.panalbit.panalsuite.data.repository.AuthRepository
 import com.panalbit.panalsuite.domain.User
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.panalbit.panalsuite.data.remote.ApiException
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -17,10 +19,20 @@ sealed interface SessionState {
 }
 
 /** Mantiene la sesion (DataStore) para decidir entre login y pantalla principal. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     val sessionState: StateFlow<SessionState> = authRepository.session
-        .map { session -> if (session == null) SessionState.LoggedOut else SessionState.LoggedIn(session.user) }
+         .mapLatest { session ->
+            if (session == null) SessionState.LoggedOut
+            else authRepository.refreshUser(session.token).fold(
+                onSuccess = { SessionState.LoggedIn(it) },
+                onFailure = { error ->
+                    if (error is ApiException && error.status == 401) SessionState.LoggedOut
+                    else SessionState.LoggedIn(session.user)
+                }
+            )
+        }
         .stateIn(viewModelScope, SharingStarted.Eagerly, SessionState.Loading)
 
     fun logout() {

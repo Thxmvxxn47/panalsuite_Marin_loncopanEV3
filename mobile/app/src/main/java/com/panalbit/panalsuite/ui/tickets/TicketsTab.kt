@@ -20,25 +20,19 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.panalbit.panalsuite.domain.Priority
 import com.panalbit.panalsuite.domain.Status
 import com.panalbit.panalsuite.domain.User
-import com.panalbit.panalsuite.ui.components.DropdownField
 import com.panalbit.panalsuite.ui.components.EmptyState
 import com.panalbit.panalsuite.ui.components.ErrorMessage
 import com.panalbit.panalsuite.ui.components.OfflineBanner
 import com.panalbit.panalsuite.ui.components.TicketCard
 import com.panalbit.panalsuite.util.Labels
-import java.text.DateFormat
-import java.util.Date
 
 @Composable
 fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> Unit) {
@@ -72,60 +66,15 @@ fun TicketsTab(viewModel: TicketsViewModel, user: User, onOpenTicket: (Long) -> 
             }
         }
 
-        DropdownField(
-            label = "Prioridad",
-            options = listOf(ALL_PRIORITIES) + Priority.all,
-            selected = state.priorityFilter,
-            onSelected = viewModel::onPriorityFilter,
-            display = { if (it == ALL_PRIORITIES) "Todas" else Labels.priority(it) },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-        )
-
-        if (state.hasFilters) {
-            TextButton(onClick = viewModel::clearFilters, modifier = Modifier.padding(horizontal = 8.dp)) {
-                Text("Limpiar filtros")
-            }
-        }
-
         if (state.isLoading) LinearProgressIndicator(modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp))
-        if (state.offline) OfflineBanner(modifier = Modifier.padding(horizontal = 16.dp))
-        val lastSyncedAt = state.lastSyncedAt
-        if (lastSyncedAt != null || state.offline) {
-            val label = lastSyncedAt?.let {
-                val time = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
-                "Última actualización: $time"
-            } ?: "Sin actualizaciones durante esta sesión"
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-        }
-        if (state.error != null && state.allTickets.isNotEmpty()) {
-            Text(
-                text = "No se pudo actualizar el listado",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-        }
-        if (state.offline || (state.error != null && state.allTickets.isNotEmpty())) {
-            TextButton(
-                onClick = { viewModel.load(user) },
-                enabled = !state.isLoading,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) {
-                Text("Reintentar")
-            }
-        }
+        if (state.offline) OfflineBanner(modifier = Modifier.padding(16.dp))
 
         val error = state.error
         when {
             error != null && state.allTickets.isEmpty() -> ErrorMessage(error, onRetry = { viewModel.load(user) })
-            visible.isEmpty() && !state.isLoading -> EmptyState(
-                if (state.hasFilters) "No hay tickets que coincidan con los filtros" else "No hay tickets"
-            )
+            visible.isEmpty() && !state.isLoading -> EmptyState("No hay tickets que coincidan con tu búsqueda")
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),

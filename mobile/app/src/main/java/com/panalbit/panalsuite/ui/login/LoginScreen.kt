@@ -55,6 +55,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: () -> Unit) {
+    var registering by rememberSaveable { mutableStateOf(false) }
+    if (registering) RegisterDialog(viewModel, onClose = { registering = false })
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showPassword by rememberSaveable { mutableStateOf(false) }
@@ -178,8 +180,9 @@ fun LoginScreen(viewModel: LoginViewModel, onLoggedIn: () -> Unit) {
                         }
                     }
 
+                    TextButton(onClick = { registering = true }) { Text("Crear cuenta") }
                     Text(
-                        text = "Demo: thomas, jose, darliette, carlos o mizahel · clave inicial 1234",
+                        text = "Demo: contraseña 1234 para todos\nthomas@panalsui.com\njose@panalsui.com\ndarliette@panalsui.com\ncarlos@panalsui.com\nmizahel@panalsui.com",
                         modifier = Modifier.padding(top = 16.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,

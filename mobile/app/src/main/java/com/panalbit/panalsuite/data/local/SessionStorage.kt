@@ -26,7 +26,7 @@ class DataStoreSessionStorage(context: Context) : SessionStorage {
     private val gson = Gson()
 
     override val session: Flow<Session?> = store.data
-        .map { preferences -> preferences[sessionKey]?.let { gson.fromJson(it, Session::class.java) } }
+        .map { preferences -> preferences[sessionKey]?.let { runCatching { gson.fromJson(it, Session::class.java) }.getOrNull() } }
         .catch { error -> if (error is IOException) emit(null) else throw error }
 
     override suspend fun save(token: String, user: User) {

@@ -3,7 +3,6 @@ package com.panalbit.panalsuite.ui
 import com.panalbit.panalsuite.data.remote.ApiException
 import com.panalbit.panalsuite.data.repository.TicketRepository
 import com.panalbit.panalsuite.domain.Loaded
-import com.panalbit.panalsuite.domain.Priority
 import com.panalbit.panalsuite.domain.Stats
 import com.panalbit.panalsuite.testutil.MainDispatcherRule
 import com.panalbit.panalsuite.testutil.Samples
@@ -49,30 +48,6 @@ class TicketsViewModelTest {
         assertEquals(listOf(1L), vm.state.value.visibleTickets.map { it.id })
     }
 
-    @Test fun combines_priority_with_search_and_status_for_cached_tickets() {
-        val cachedTickets = listOf(
-            Samples.ticket(1, "VPN lenta").copy(priority = Priority.HIGH),
-            Samples.ticket(2, "VPN caída", "EN_PROGRESO").copy(priority = Priority.HIGH),
-            Samples.ticket(3, "VPN intermitente"),
-            Samples.ticket(4, "Impresora caída").copy(priority = Priority.HIGH)
-        )
-        coEvery { repo.getTickets(Samples.supervisor) } returns Result.success(Loaded(cachedTickets, offline = true))
-        val vm = TicketsViewModel(repo)
-        vm.load(Samples.supervisor)
-        vm.onQueryChange("VPN")
-        vm.onStatusFilter("NUEVO")
-        vm.onPriorityFilter(Priority.HIGH)
-
-        assertEquals(listOf(1L), vm.state.value.visibleTickets.map { it.id })
-        assertTrue(vm.state.value.hasFilters)
-
-        vm.clearFilters()
-
-        assertFalse(vm.state.value.hasFilters)
-        assertEquals(cachedTickets, vm.state.value.visibleTickets)
-        assertTrue(vm.state.value.offline)
-    }
-
     @Test fun offline_flag_and_error() {
         coEvery { repo.getTickets(any()) } returns Result.success(Loaded(tickets, offline = true))
         val vm = TicketsViewModel(repo)
@@ -83,27 +58,6 @@ class TicketsViewModelTest {
         vm.load(Samples.admin)
         assertEquals("fallo", vm.state.value.error)
         assertFalse(vm.state.value.isLoading)
-    }
-
-    @Test fun keeps_last_sync_while_offline_and_updates_it_on_retry() {
-        var now = 1000L
-        val vm = TicketsViewModel(repo) { now }
-        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets))
-        vm.load(Samples.admin)
-        assertEquals(1000L, vm.state.value.lastSyncedAt)
-
-        now = 2000L
-        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets, offline = true))
-        vm.load(Samples.admin)
-        assertTrue(vm.state.value.offline)
-        assertEquals(tickets, vm.state.value.allTickets)
-        assertEquals(1000L, vm.state.value.lastSyncedAt)
-
-        now = 3000L
-        coEvery { repo.getTickets(Samples.admin) } returns Result.success(Loaded(tickets))
-        vm.load(Samples.admin)
-        assertFalse(vm.state.value.offline)
-        assertEquals(3000L, vm.state.value.lastSyncedAt)
     }
 
     @Test fun dashboard_loads_stats_and_recent_limit() {

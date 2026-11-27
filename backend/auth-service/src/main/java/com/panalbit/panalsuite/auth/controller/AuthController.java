@@ -26,10 +26,9 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto register(@RequestHeader(value = "Authorization", required = false) String authorization,
-                            @Valid @RequestBody UserRequest request) {
-        service.requireAdministrator(authorization);
-        return service.create(request);
+    public UserDto register(@Valid @RequestBody UserRequest request) {
+        return service.create(new UserRequest(request.username(), request.name(), request.email(),
+                com.panalbit.panalsuite.auth.model.Role.SOLICITANTE, request.password()));
     }
 
     @GetMapping("/me")
