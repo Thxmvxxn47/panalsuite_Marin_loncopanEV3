@@ -13,7 +13,6 @@ import com.panalbit.panalsuite.domain.TicketRules
 import com.panalbit.panalsuite.domain.Roles
 import com.panalbit.panalsuite.domain.User
 import com.panalbit.panalsuite.util.Validators
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,16 +73,14 @@ class TicketDetailViewModel(
         }
     }
 
-    private suspend fun loadEvidence(): Boolean {
-        return try {
+    private suspend fun loadEvidence() {
+        try {
             val items = ticketRepository.getEvidence(ticketId)
             _state.update { it.copy(evidence = items) }
-            true
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) {
+            android.util.Log.e("TicketDetail", "No se pudo leer evidencia local", e)
             _state.update { it.copy(message = "No se pudo cargar la evidencia local") }
-            false
         }
     }
 
@@ -162,23 +159,14 @@ class TicketDetailViewModel(
     }
 
     fun addEvidence(filePath: String) {
-        if (filePath.isBlank()) {
-            _state.update { it.copy(message = "Selecciona una foto para adjuntar") }
-            return
-        }
         viewModelScope.launch {
             try {
                 ticketRepository.addEvidence(ticketId, filePath)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Exception) {
-                _state.update { it.copy(message = "No se pudo guardar la evidencia") }
-                return@launch
-            }
-            if (loadEvidence()) {
+                loadEvidence()
                 _state.update { it.copy(message = "Evidencia guardada en el dispositivo") }
-            } else {
-                _state.update { it.copy(message = "La evidencia se guardó, pero no se pudo actualizar la lista") }
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) {
+                _state.update { it.copy(message = "No se pudo guardar la evidencia") }
             }
         }
     }
