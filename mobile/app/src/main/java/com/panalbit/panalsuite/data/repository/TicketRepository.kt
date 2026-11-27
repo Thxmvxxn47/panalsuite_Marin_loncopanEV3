@@ -27,7 +27,7 @@ class TicketRepository(
             load(
                 remote = {
                     api.list(requesterId).also { list ->
-                        tickets.replace(requesterId, list.map(::encode))
+                        cacheSafely { tickets.replace(requesterId, list.map(::encode)) }
                     }
                 },
                 cached = { tickets.list(requesterId).takeIf { it.isNotEmpty() }?.map(::decode) }
@@ -39,11 +39,11 @@ class TicketRepository(
         cacheLock.withLock {
             try {
                 load(
-                    remote = { api.get(id).also { tickets.save(encode(it)) } },
+                    remote = { api.get(id).also { cacheSafely { tickets.save(encode(it)) } } },
                     cached = { tickets.get(id)?.let(::decode) }
                 )
             } catch (error: HttpException) {
-                if (error.code() == 404) tickets.delete(id)
+                if (error.code() == 404) cacheSafely { tickets.delete(id) }
                 throw error
             }
         }
@@ -56,7 +56,7 @@ class TicketRepository(
     suspend fun deleteTicket(id: Long) = apiResult {
         cacheLock.withLock {
             api.delete(id)
-            tickets.delete(id)
+            cacheSafely { tickets.delete(id) }
         }
     }
 
@@ -77,17 +77,7 @@ class TicketRepository(
     }
 
     private suspend fun updateCache(request: suspend () -> Ticket) = apiResult {
-        cacheLock.withLock {
-            val ticket = request()
-            try {
-                tickets.save(encode(ticket))
-            } catch (error: kotlinx.coroutines.CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                // The server already saved the ticket. The next refresh can rebuild the cache.
-            }
-            ticket
-        }
+        cacheLock.withLock { request().also { cacheSafely { tickets.save(encode(it)) } } }
     }
 
     private suspend fun <T> load(remote: suspend () -> T, cached: suspend () -> T?): Loaded<T> =
@@ -99,6 +89,11 @@ class TicketRepository(
             if (error.code() < 500) throw error
             Loaded(cached() ?: throw error, offline = true)
         }
+
+    private suspend fun cacheSafely(block: suspend () -> Unit) {
+        try { block() } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { android.util.Log.w("TicketRepository", "Error de cache local", e) }
+    }
 
     private fun encode(ticket: Ticket) = CachedTicket(ticket.id, ticket.requesterId, gson.toJson(ticket))
     private fun decode(ticket: CachedTicket) = gson.fromJson(ticket.json, Ticket::class.java)

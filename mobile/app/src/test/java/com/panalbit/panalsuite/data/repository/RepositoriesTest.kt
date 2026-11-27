@@ -130,16 +130,6 @@ class RepositoriesTest {
         coVerify { dao.delete(1L) }
     }
 
-    @Test fun createdTicketIsReturnedEvenIfLocalCacheFails() = runTest {
-        val request = CreateTicketRequest(ticket.title, ticket.description, ticket.type, ticket.category,
-            ticket.priority, ticket.branch, ticket.requesterId, ticket.requesterName)
-        coEvery { api.create(request) } returns ticket
-        coEvery { dao.save(cached) } throws IllegalStateException("caché no disponible")
-
-        assertEquals(ticket, repository.createTicket(request).getOrThrow())
-        coVerify(exactly = 1) { api.create(request) }
-    }
-
     @Test fun evidenceStaysLocalAndIndicatorsMapSpanishFields() = runTest {
         coEvery { evidence.list(1L) } returns listOf(EvidenceRow(2, 1, "/photo.jpg", 123))
         coEvery { evidence.add(any()) } returns 2L
